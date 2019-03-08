@@ -59,5 +59,29 @@ contract('DappTokenSale', (accounts) => {
     }).then(assert.fail).catch(error => {
       assert(error.message.indexOf('revert') >= 0, 'cannot purchase more tokens than available');
     })
+  });
+
+  it('End token sale', () => {
+    return DappToken.deployed().then(instance => {
+      // Grab token instance first
+      tokenInstance = instance;
+      return DappTokenSale.deployed();
+    }).then(instance => {
+      // Then grab token sale instance
+      tokenSaleInstance = instance;
+      // Try to end sale by account other than the admin
+      return tokenSaleInstance.endSale({from: buyer});
+    }).then(assert.faile).catch(error => {
+      assert(error.message.indexOf('revert') >= 0, 'Must be admin to end sale')
+      return tokenSaleInstance.endSale({from: admin});
+    }).then(receipt => {
+      return tokenInstance.balanceOf(admin);
+    }).then(balance => {
+      assert.equal(balance.toNumber(), 749890, 'Returns all unsold dapp tokens to admin');
+      // check that the token price is reset when self destruct is called
+      return tokenSaleInstance.tokenPrice();
+    }).then(price => {
+      assert.equal(price.toNumber(), 0, 'Token price was reset');
+    });
   })
 });
