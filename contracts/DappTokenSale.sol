@@ -31,6 +31,10 @@ contract DappTokenSale {
         emit Sell(msg.sender, _numberOfTokens);
     }
 
+    function balanceOfThis() public view returns(uint) {
+        return tokenContract.balanceOf(this);
+    }
+
     function endSale() public {
         require(msg.sender == admin);
         require(tokenContract.transfer(admin, tokenContract.balanceOf(this)));
