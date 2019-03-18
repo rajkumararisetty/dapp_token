@@ -1,7 +1,9 @@
-import React, {PureComponent, Fragment} from 'react';
+import React, {PureComponent} from 'react';
 
 class DappToken extends PureComponent {
-  state = {input: 0, totalTokensKey:null, tokenPriceKey:null, soldTokensKey: null, balanceOfThisKey:null};
+  state = {input: 0, totalTokensKey:null, tokenPriceKey:null, soldTokensKey: null,
+    saleContractAddress: null, tokenContractAddress: null};
+
   textOnchange = (event) => {
     event.preventDefault();
     const value = event.target.value;
@@ -30,25 +32,26 @@ class DappToken extends PureComponent {
     const tokenContract = drizzle.contracts.DappToken;
     const saleContract = drizzle.contracts.DappTokenSale;
 
+    // Get the contract addresses
+    const saleContractAddress = saleContract.address;
+    const tokenContractAddress = tokenContract.address;
+
     // Let drizzle know we want to watch the `myString` method
-    const totalTokensKey = tokenContract.methods['totalSupply'].cacheCall();
+    const totalTokensKey = tokenContract.methods['balanceOf'].cacheCall(saleContractAddress);
     const soldTokensKey = saleContract.methods['tokensSold'].cacheCall();
     const tokenPriceKey = saleContract.methods['tokenPrice'].cacheCall();
-    const balanceOfThisKey = saleContract.methods['balanceOfThis'].cacheCall();
 
     // Save the totalTokensKey to local component state for later reference
-    this.setState({totalTokensKey, soldTokensKey, tokenPriceKey, balanceOfThisKey});
+    this.setState({saleContractAddress, tokenContractAddress, totalTokensKey, soldTokensKey, tokenPriceKey});
   };
 
   render = () => {
     const {drizzleState} = this.props;
     const {DappToken, DappTokenSale} = drizzleState.contracts;
-    const {input, totalTokensKey, soldTokensKey, tokenPriceKey, balanceOfThisKey} = this.state;
-    const totalTokens = DappToken.totalSupply[totalTokensKey];
+    const {input, totalTokensKey, soldTokensKey, tokenPriceKey} = this.state;
+    const totalTokens = DappToken.balanceOf[totalTokensKey];
     const soldTokens = DappTokenSale.tokensSold[soldTokensKey];
     const tokenPrice = DappTokenSale.tokenPrice[tokenPriceKey];
-    const balanceOfThis = DappTokenSale.balanceOfThis[balanceOfThisKey];
-    console.log(balanceOfThis);
 
     return (
       <div className="container" style={{width: "650px"}}>
@@ -63,7 +66,7 @@ class DappToken extends PureComponent {
                 Token price is <span className="token-price"></span> Ether. you currently have <span className="dapp-balance"></span>&nbsp;Dapp.
               </p>
             </div>
-            <form role="form">
+            <form>
               <div className="form-group">
                 <div className="input-group">
                   <input className="form-control input-group-lg" type="number" id="numberOfToken" name="number" value={input} onChange={this.textOnchange}/>
